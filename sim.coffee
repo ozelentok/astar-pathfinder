@@ -20,7 +20,9 @@ class GE.Sim
 
 	Astar: ->
 		@closedSet = {}
-		@openSet = []
+		@openSet = new BinaryHeap( (node) ->
+			return node.fScore
+		)
 		@came_from = []
 		@start.gScore = 1
 		@start.fScore = @start.gScore + @heuristic_cost(@start, @goal)
@@ -28,19 +30,17 @@ class GE.Sim
 		@disableButtons()
 
 	AstarLoop: ->
-		if(@openSet.length >= 1)
-			current = @openSet[0]
+		if(@openSet.size() >= 1)
+			current = @openSet.pop()
 			#if(@timerId)
 			@drawAll()
 			@drawCell current.x*Const.squareLen, current.y*Const.squareLen, '#0F0'
 			if current.x is @goal.x and current.y is @goal.y
-				@drawAll()
 				@drawPath(current)
 				console.log "win"
 				clearInterval @timerId
 				@enableButtons()
 				return false
-			@openSet.splice(0, 1)
 			@addToClosedSet(current)
 			@checkNeighbors(current)
 			@drawFandG()
@@ -55,8 +55,7 @@ class GE.Sim
 		for neighbor in @neighborsOf(current)
 			if @isInClosedSet(neighbor)
 				continue
-			notInOpenSet = not @isInOpenSet(neighbor)
-			if notInOpenSet
+			if not @isInOpenSet(neighbor)
 				neighbor.gScore += current.gScore
 				@addToOpenSet(neighbor)
 			else
@@ -65,23 +64,12 @@ class GE.Sim
 					neighbor.dad = current
 					neighbor.gScore = tentativeGScore
 					neighbor.fScore = neighbor.gScore + @heuristic_cost(neighbor, @goal)
-			@openSet.sort( (a, b) ->
-				return a.fScore - b.fScore
-			)
 		return
 
 	addToOpenSet: (cell) ->
 		cell.fScore = cell.gScore + @heuristic_cost(cell, @goal)
 		@openSet.push(cell)
 		return
-
-	isInOpenSet: (cell) ->
-		for setCell in @openSet
-			if setCell.x is cell.x and setCell.y is cell.y
-				return true
-			else if setCell.fScore >= cell.fScore
-				return false
-		return false
 
 	addToClosedSet: (cell) ->
 		key = cell.x + '|' + cell.y
@@ -91,6 +79,15 @@ class GE.Sim
 	isInClosedSet: (cell) ->
 		key = cell.x + '|' + cell.y
 		return key of @closedSet
+
+	isInOpenSet: (cell) ->
+		for setCell in @openSet.content
+			if setCell.x is cell.x and setCell.y is cell.y
+				return true
+			else if setCell.fScore >= cell.fScore
+				return false
+		return false
+
 
 	heuristic_cost: (from, to) ->
 		dx = Math.abs(from.x - to.x)
@@ -163,7 +160,7 @@ class GE.Sim
 
 	drawFandG: ->
 		@ctx.fillStyle= 'white'
-		for openCell in @openSet
+		for openCell in @openSet.content
 			@ctx.fillText(openCell.fScore.toFixed(2), openCell.x*Const.squareLen + 10, (openCell.y+0.3)*Const.squareLen)
 			@ctx.fillText(openCell.gScore.toFixed(2), openCell.x*Const.squareLen + 10, (openCell.y+0.7)*Const.squareLen)
 		return

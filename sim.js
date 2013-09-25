@@ -36,7 +36,9 @@
 
     Sim.prototype.Astar = function() {
       this.closedSet = {};
-      this.openSet = [];
+      this.openSet = new BinaryHeap(function(node) {
+        return node.fScore;
+      });
       this.came_from = [];
       this.start.gScore = 1;
       this.start.fScore = this.start.gScore + this.heuristic_cost(this.start, this.goal);
@@ -46,19 +48,17 @@
 
     Sim.prototype.AstarLoop = function() {
       var current;
-      if (this.openSet.length >= 1) {
-        current = this.openSet[0];
+      if (this.openSet.size() >= 1) {
+        current = this.openSet.pop();
         this.drawAll();
         this.drawCell(current.x * Const.squareLen, current.y * Const.squareLen, '#0F0');
         if (current.x === this.goal.x && current.y === this.goal.y) {
-          this.drawAll();
           this.drawPath(current);
           console.log("win");
           clearInterval(this.timerId);
           this.enableButtons();
           return false;
         }
-        this.openSet.splice(0, 1);
         this.addToClosedSet(current);
         this.checkNeighbors(current);
         this.drawFandG();
@@ -71,15 +71,14 @@
     };
 
     Sim.prototype.checkNeighbors = function(current) {
-      var neighbor, notInOpenSet, tentativeGScore, _i, _len, _ref;
+      var neighbor, tentativeGScore, _i, _len, _ref;
       _ref = this.neighborsOf(current);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         neighbor = _ref[_i];
         if (this.isInClosedSet(neighbor)) {
           continue;
         }
-        notInOpenSet = !this.isInOpenSet(neighbor);
-        if (notInOpenSet) {
+        if (!this.isInOpenSet(neighbor)) {
           neighbor.gScore += current.gScore;
           this.addToOpenSet(neighbor);
         } else {
@@ -90,29 +89,12 @@
             neighbor.fScore = neighbor.gScore + this.heuristic_cost(neighbor, this.goal);
           }
         }
-        this.openSet.sort(function(a, b) {
-          return a.fScore - b.fScore;
-        });
       }
     };
 
     Sim.prototype.addToOpenSet = function(cell) {
       cell.fScore = cell.gScore + this.heuristic_cost(cell, this.goal);
       this.openSet.push(cell);
-    };
-
-    Sim.prototype.isInOpenSet = function(cell) {
-      var setCell, _i, _len, _ref;
-      _ref = this.openSet;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        setCell = _ref[_i];
-        if (setCell.x === cell.x && setCell.y === cell.y) {
-          return true;
-        } else if (setCell.fScore >= cell.fScore) {
-          return false;
-        }
-      }
-      return false;
     };
 
     Sim.prototype.addToClosedSet = function(cell) {
@@ -125,6 +107,20 @@
       var key;
       key = cell.x + '|' + cell.y;
       return key in this.closedSet;
+    };
+
+    Sim.prototype.isInOpenSet = function(cell) {
+      var setCell, _i, _len, _ref;
+      _ref = this.openSet.content;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        setCell = _ref[_i];
+        if (setCell.x === cell.x && setCell.y === cell.y) {
+          return true;
+        } else if (setCell.fScore >= cell.fScore) {
+          return false;
+        }
+      }
+      return false;
     };
 
     Sim.prototype.heuristic_cost = function(from, to) {
@@ -265,7 +261,7 @@
     Sim.prototype.drawFandG = function() {
       var openCell, _i, _len, _ref;
       this.ctx.fillStyle = 'white';
-      _ref = this.openSet;
+      _ref = this.openSet.content;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         openCell = _ref[_i];
         this.ctx.fillText(openCell.fScore.toFixed(2), openCell.x * Const.squareLen + 10, (openCell.y + 0.3) * Const.squareLen);

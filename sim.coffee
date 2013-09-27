@@ -34,7 +34,6 @@ class GE.Sim
 	AstarLoop: ->
 		if(@openSet.size() >= 1)
 			current = @openSet.pop()
-			@drawCell current.x, current.y, '#FF0'
 			if @hasReachedGoal(current)
 				return false
 			@addToClosedSet(current)

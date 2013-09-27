@@ -52,7 +52,6 @@
       var current;
       if (this.openSet.size() >= 1) {
         current = this.openSet.pop();
-        this.drawCell(current.x, current.y, '#FF0');
         if (this.hasReachedGoal(current)) {
           return false;
         }

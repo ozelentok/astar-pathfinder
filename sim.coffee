@@ -4,7 +4,7 @@ class GE.Sim
 
 	Const =
 		width: 600
-		squares: 15
+		squares: 100
 	Const.height = Const.width
 	Const.squareLen = Const.width / Const.squares
 	constructor: ($canvas) ->
@@ -12,44 +12,44 @@ class GE.Sim
 		@ctx = @canvas.getContext '2d'
 		@setSizes()
 		@setEvents()
-		@buildGrid()
-		@start = {x:0, y:0}
-		@goal = {x:10, y:10}
+		@initData()
 		@drawAll()
-		@enableButtons()
+
+	initData: ->
+		@buildGrid()
+		@start = x:0, y:0
+		@goal = x:Const.squares - 1, y:Const.squares - 1
 
 	Astar: ->
 		@closedSet = {}
-		@openSet = new BinaryHeap( (node) ->
+		@openSet = new BinaryHeap((node) ->
 			return node.fScore
 		)
-		@came_from = []
-		@start.gScore = 1
+		@start.gScore = @grid[@start.x][@start.y]
 		@start.fScore = @start.gScore + @heuristic_cost(@start, @goal)
 		@addToOpenSet(@start)
 		@disableButtons()
+		return
 
 	AstarLoop: ->
 		if(@openSet.size() >= 1)
 			current = @openSet.pop()
-			#if(@timerId)
-			@drawAll()
-			@drawCell current.x*Const.squareLen, current.y*Const.squareLen, '#0F0'
-			if current.x is @goal.x and current.y is @goal.y
-				@drawPath(current)
-				console.log "win"
-				clearInterval @timerId
-				@enableButtons()
+			@drawCell current.x, current.y, '#FF0'
+			if @hasReachedGoal(current)
 				return false
 			@addToClosedSet(current)
 			@checkNeighbors(current)
-			@drawFandG()
 			return true
 		else
 			console.log "failure"
-			clearInterval @timerId
 			return false
-		
+
+	hasReachedGoal: (current) ->
+		if current.x is @goal.x and current.y is @goal.y
+			@drawAll()
+			@drawPath(current)
+			@enableButtons()
+			console.log "win"
 
 	checkNeighbors: (current) ->
 		for neighbor in @neighborsOf(current)
@@ -84,16 +84,13 @@ class GE.Sim
 		for setCell in @openSet.content
 			if setCell.x is cell.x and setCell.y is cell.y
 				return true
-			else if setCell.fScore >= cell.fScore
-				return false
 		return false
-
 
 	heuristic_cost: (from, to) ->
 		dx = Math.abs(from.x - to.x)
 		dy = Math.abs(from.y - to.y)
 		#return 10*(dx+dy)
-		return Math.sqrt(dx * dx + dy * dy)*10
+		return 10 * Math.sqrt(dx * dx + dy * dy)
 
 	neighborsOf: (cell) ->
 		x = cell.x
@@ -131,38 +128,36 @@ class GE.Sim
 	drawPath: (currentCell) ->
 		currentCell = currentCell.dad
 		while currentCell.dad
-			@drawCell currentCell.x*Const.squareLen, currentCell.y*Const.squareLen, '#0F0'
+			@drawCell currentCell.x, currentCell.y, '#0F0'
 			currentCell = currentCell.dad
 		return
 
 	drawGrid: ->
 		for i in [0...Const.squares]
 			for j in [0...Const.squares]
-				@drawCell i*Const.squareLen, j*Const.squareLen, @gToColor(@grid[i][j])
+				@drawCell i, j, @gToColor(@grid[i][j])
 		return
 
 	gToColor: (g)->
 		str = Math.floor(g * 255 / 1000).toString(16)
 		return '#' + str + str + str
 
+	disableButtons: ->
+		$('button').attr('disabled', 'disabled')
+		return
+
+	enableButtons: ->
+		$('button').removeAttr('disabled')
+		return
 	drawCell: (x, y, color) ->
 		@ctx.fillStyle = color
-		@ctx.fillRect(x, y, Const.squareLen, Const.squareLen)
-		#@ctx.strokeRect(x, y, Const.squareLen, Const.squareLen)
+		@ctx.fillRect(x * Const.squareLen, y*Const.squareLen, Const.squareLen, Const.squareLen)
 		return
 
 	drawAll: ->
-		@ctx.strokeStyle = 'white'
 		@drawGrid()
-		@drawCell(@start.x*Const.squareLen, @start.y*Const.squareLen, '#22F')
-		@drawCell(@goal.x*Const.squareLen, @goal.y*Const.squareLen,'#F00')
-		return
-
-	drawFandG: ->
-		@ctx.fillStyle= 'white'
-		for openCell in @openSet.content
-			@ctx.fillText(openCell.fScore.toFixed(2), openCell.x*Const.squareLen + 10, (openCell.y+0.3)*Const.squareLen)
-			@ctx.fillText(openCell.gScore.toFixed(2), openCell.x*Const.squareLen + 10, (openCell.y+0.7)*Const.squareLen)
+		@drawCell(@start.x, @start.y, '#22F')
+		@drawCell(@goal.x, @goal.y,'#F00')
 		return
 
 	setSizes: ->
@@ -171,48 +166,28 @@ class GE.Sim
 		Const.squareLen = @canvas.width / Const.squares
 		return
 
-	disableButtons: ->
-		$('button').attr('disabled', 'disabled')
-		return
-	enableButtons: ->
-		$('button').removeAttr('disabled')
-		return
 	setEvents: ->
+		@enableButtons()
 		@diagonals = true
 		$('#diagonal').prop('checked', @diagonals)
-		@keyMode = 0
 		$(@canvas).bind 'mousedown', (e) =>
 			i = Math.floor((e.pageX - @canvas.offsetLeft)/Const.squareLen)
 			j = Math.floor((e.pageY - @canvas.offsetTop)/Const.squareLen)
-			if @keyMode is 1
+			if e.which is 1
 				@start.x = i
 				@start.y = j
-			else if @keyMode is 2
+			else if e.which is 3
 				@goal.x = i
 				@goal.y = j
-			else if @grid[i][j] < 800
-				@grid[i][j] += 400
+			else
+				@grid[i][j] += 200
+				if @grid[i][j] > 1000
+					@grid[i][j] = 1000
 			@drawAll()
-			return
+			return false
+		$(@canvas).bind 'contextmenu', ->
+			return false
 
-		$(document).bind 'keydown', (e) =>
-			if e.keyCode is 17
-				@keyMode = 1
-			else if e.keyCode is 16
-				@keyMode = 2
-			else if e.keyCode is 32
-				@AstarLoop()
-			return
-		$(document).bind 'keyup', =>
-			@keyMode = 0
-
-		$('#start').bind 'click', =>
-			@Astar()
-			#@timerId = setInterval =>
-			#	@AstarLoop()
-			#	return
-			#, 300
-			return
 		$('#instantSolve').bind 'click', =>
 			@Astar()
 			while @AstarLoop() then
@@ -220,7 +195,6 @@ class GE.Sim
 		$('#diagonal').bind 'click', (ev) =>
 			@diagonals = ev.currentTarget.checked
 			return true
-
 		$(window).resize =>
 			@setSizes()
 			@drawAll()

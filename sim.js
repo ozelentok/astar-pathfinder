@@ -9,7 +9,7 @@
 
     Const = {
       width: 600,
-      squares: 15
+      squares: 100
     };
 
     Const.height = Const.width;
@@ -21,52 +21,56 @@
       this.ctx = this.canvas.getContext('2d');
       this.setSizes();
       this.setEvents();
+      this.initData();
+      this.drawAll();
+    }
+
+    Sim.prototype.initData = function() {
       this.buildGrid();
       this.start = {
         x: 0,
         y: 0
       };
-      this.goal = {
-        x: 10,
-        y: 10
+      return this.goal = {
+        x: Const.squares - 1,
+        y: Const.squares - 1
       };
-      this.drawAll();
-      this.enableButtons();
-    }
+    };
 
     Sim.prototype.Astar = function() {
       this.closedSet = {};
       this.openSet = new BinaryHeap(function(node) {
         return node.fScore;
       });
-      this.came_from = [];
-      this.start.gScore = 1;
+      this.start.gScore = this.grid[this.start.x][this.start.y];
       this.start.fScore = this.start.gScore + this.heuristic_cost(this.start, this.goal);
       this.addToOpenSet(this.start);
-      return this.disableButtons();
+      this.disableButtons();
     };
 
     Sim.prototype.AstarLoop = function() {
       var current;
       if (this.openSet.size() >= 1) {
         current = this.openSet.pop();
-        this.drawAll();
-        this.drawCell(current.x * Const.squareLen, current.y * Const.squareLen, '#0F0');
-        if (current.x === this.goal.x && current.y === this.goal.y) {
-          this.drawPath(current);
-          console.log("win");
-          clearInterval(this.timerId);
-          this.enableButtons();
+        this.drawCell(current.x, current.y, '#FF0');
+        if (this.hasReachedGoal(current)) {
           return false;
         }
         this.addToClosedSet(current);
         this.checkNeighbors(current);
-        this.drawFandG();
         return true;
       } else {
         console.log("failure");
-        clearInterval(this.timerId);
         return false;
+      }
+    };
+
+    Sim.prototype.hasReachedGoal = function(current) {
+      if (current.x === this.goal.x && current.y === this.goal.y) {
+        this.drawAll();
+        this.drawPath(current);
+        this.enableButtons();
+        return console.log("win");
       }
     };
 
@@ -116,8 +120,6 @@
         setCell = _ref[_i];
         if (setCell.x === cell.x && setCell.y === cell.y) {
           return true;
-        } else if (setCell.fScore >= cell.fScore) {
-          return false;
         }
       }
       return false;
@@ -127,7 +129,7 @@
       var dx, dy;
       dx = Math.abs(from.x - to.x);
       dy = Math.abs(from.y - to.y);
-      return Math.sqrt(dx * dx + dy * dy) * 10;
+      return 10 * Math.sqrt(dx * dx + dy * dy);
     };
 
     Sim.prototype.neighborsOf = function(cell) {
@@ -226,7 +228,7 @@
     Sim.prototype.drawPath = function(currentCell) {
       currentCell = currentCell.dad;
       while (currentCell.dad) {
-        this.drawCell(currentCell.x * Const.squareLen, currentCell.y * Const.squareLen, '#0F0');
+        this.drawCell(currentCell.x, currentCell.y, '#0F0');
         currentCell = currentCell.dad;
       }
     };
@@ -235,7 +237,7 @@
       var i, j, _i, _j, _ref, _ref1;
       for (i = _i = 0, _ref = Const.squares; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
         for (j = _j = 0, _ref1 = Const.squares; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; j = 0 <= _ref1 ? ++_j : --_j) {
-          this.drawCell(i * Const.squareLen, j * Const.squareLen, this.gToColor(this.grid[i][j]));
+          this.drawCell(i, j, this.gToColor(this.grid[i][j]));
         }
       }
     };
@@ -246,35 +248,6 @@
       return '#' + str + str + str;
     };
 
-    Sim.prototype.drawCell = function(x, y, color) {
-      this.ctx.fillStyle = color;
-      this.ctx.fillRect(x, y, Const.squareLen, Const.squareLen);
-    };
-
-    Sim.prototype.drawAll = function() {
-      this.ctx.strokeStyle = 'white';
-      this.drawGrid();
-      this.drawCell(this.start.x * Const.squareLen, this.start.y * Const.squareLen, '#22F');
-      this.drawCell(this.goal.x * Const.squareLen, this.goal.y * Const.squareLen, '#F00');
-    };
-
-    Sim.prototype.drawFandG = function() {
-      var openCell, _i, _len, _ref;
-      this.ctx.fillStyle = 'white';
-      _ref = this.openSet.content;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        openCell = _ref[_i];
-        this.ctx.fillText(openCell.fScore.toFixed(2), openCell.x * Const.squareLen + 10, (openCell.y + 0.3) * Const.squareLen);
-        this.ctx.fillText(openCell.gScore.toFixed(2), openCell.x * Const.squareLen + 10, (openCell.y + 0.7) * Const.squareLen);
-      }
-    };
-
-    Sim.prototype.setSizes = function() {
-      this.canvas.width = Math.min($(window).width() - 40, Const.width);
-      this.canvas.height = Math.min($(window).width() - 40, Const.height);
-      Const.squareLen = this.canvas.width / Const.squares;
-    };
-
     Sim.prototype.disableButtons = function() {
       $('button').attr('disabled', 'disabled');
     };
@@ -283,40 +256,49 @@
       $('button').removeAttr('disabled');
     };
 
+    Sim.prototype.drawCell = function(x, y, color) {
+      this.ctx.fillStyle = color;
+      this.ctx.fillRect(x * Const.squareLen, y * Const.squareLen, Const.squareLen, Const.squareLen);
+    };
+
+    Sim.prototype.drawAll = function() {
+      this.drawGrid();
+      this.drawCell(this.start.x, this.start.y, '#22F');
+      this.drawCell(this.goal.x, this.goal.y, '#F00');
+    };
+
+    Sim.prototype.setSizes = function() {
+      this.canvas.width = Math.min($(window).width() - 40, Const.width);
+      this.canvas.height = Math.min($(window).width() - 40, Const.height);
+      Const.squareLen = this.canvas.width / Const.squares;
+    };
+
     Sim.prototype.setEvents = function() {
       var _this = this;
+      this.enableButtons();
       this.diagonals = true;
       $('#diagonal').prop('checked', this.diagonals);
-      this.keyMode = 0;
       $(this.canvas).bind('mousedown', function(e) {
         var i, j;
         i = Math.floor((e.pageX - _this.canvas.offsetLeft) / Const.squareLen);
         j = Math.floor((e.pageY - _this.canvas.offsetTop) / Const.squareLen);
-        if (_this.keyMode === 1) {
+        if (e.which === 1) {
           _this.start.x = i;
           _this.start.y = j;
-        } else if (_this.keyMode === 2) {
+        } else if (e.which === 3) {
           _this.goal.x = i;
           _this.goal.y = j;
-        } else if (_this.grid[i][j] < 800) {
-          _this.grid[i][j] += 400;
+        } else {
+          _this.grid[i][j] += 200;
+          if (_this.grid[i][j] > 1000) {
+            _this.grid[i][j] = 1000;
+          }
         }
         _this.drawAll();
+        return false;
       });
-      $(document).bind('keydown', function(e) {
-        if (e.keyCode === 17) {
-          _this.keyMode = 1;
-        } else if (e.keyCode === 16) {
-          _this.keyMode = 2;
-        } else if (e.keyCode === 32) {
-          _this.AstarLoop();
-        }
-      });
-      $(document).bind('keyup', function() {
-        return _this.keyMode = 0;
-      });
-      $('#start').bind('click', function() {
-        _this.Astar();
+      $(this.canvas).bind('contextmenu', function() {
+        return false;
       });
       $('#instantSolve').bind('click', function() {
         _this.Astar();

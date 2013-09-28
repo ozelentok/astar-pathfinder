@@ -138,21 +138,17 @@ class GE.Sim
 		return Math.floor(Math.random()*2)
 
 	divideMaze: (x, y, width, height, orientaion) ->
-		if width < 5 or height < 5
+		if width < 4 or height < 6
 			return
 		isHorizontal = (orientaion == 0)
 		wx = x + (if isHorizontal then 0 else Math.floor(Math.random()*(width-2)))
 		wy = y + (if isHorizontal then Math.floor(Math.random()*(height-2)) else 0)
-		px = wx + (if isHorizontal then Math.floor(Math.random()*width) else 0)
-		py = wy + (if isHorizontal then 0 else Math.floor(Math.random()*height))
 		dx = if isHorizontal then 1 else 0
 		dy = if isHorizontal then 0 else 1
 		len = if isHorizontal then width else height
+		val = Math.floor(Math.random()*1000)
 		for i in [0...len]
-			if wx is px and wy is py
-				@grid[wx][wy] = 10
-			else
-				@grid[wx][wy] = 1001
+			@grid[wx][wy] = val
 			wx += dx
 			wy += dy
 		nx = x

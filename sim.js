@@ -242,24 +242,19 @@
     };
 
     Sim.prototype.divideMaze = function(x, y, width, height, orientaion) {
-      var dx, dy, h, i, isHorizontal, len, nx, ny, px, py, w, wx, wy, _i;
-      if (width < 5 || height < 5) {
+      var dx, dy, h, i, isHorizontal, len, nx, ny, val, w, wx, wy, _i;
+      if (width < 4 || height < 6) {
         return;
       }
       isHorizontal = orientaion === 0;
       wx = x + (isHorizontal ? 0 : Math.floor(Math.random() * (width - 2)));
       wy = y + (isHorizontal ? Math.floor(Math.random() * (height - 2)) : 0);
-      px = wx + (isHorizontal ? Math.floor(Math.random() * width) : 0);
-      py = wy + (isHorizontal ? 0 : Math.floor(Math.random() * height));
       dx = isHorizontal ? 1 : 0;
       dy = isHorizontal ? 0 : 1;
       len = isHorizontal ? width : height;
+      val = Math.floor(Math.random() * 1000);
       for (i = _i = 0; 0 <= len ? _i < len : _i > len; i = 0 <= len ? ++_i : --_i) {
-        if (wx === px && wy === py) {
-          this.grid[wx][wy] = 10;
-        } else {
-          this.grid[wx][wy] = 1001;
-        }
+        this.grid[wx][wy] = val;
         wx += dx;
         wy += dy;
       }

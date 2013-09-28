@@ -3,7 +3,7 @@ GE = {}
 class GE.Sim
 
 	Const =
-		width: 600
+		width: 700
 		squares: 100
 	Const.height = Const.width
 	Const.squareLen = Const.width / Const.squares
@@ -28,7 +28,6 @@ class GE.Sim
 		@start.gScore = @grid[@start.x][@start.y]
 		@start.fScore = @start.gScore + @heuristic_cost(@start, @goal)
 		@addToOpenSet(@start)
-		@disableButtons()
 		return
 
 	AstarLoop: ->
@@ -49,9 +48,14 @@ class GE.Sim
 			@drawPath(current)
 			@enableButtons()
 			console.log "win"
+			return true
+		return false
 
 	checkNeighbors: (current) ->
 		for neighbor in @neighborsOf(current)
+			if neighbor.gScore is 1001
+				@addToClosedSet(neighbor)
+				continue
 			if @isInClosedSet(neighbor)
 				continue
 			if not @isInOpenSet(neighbor)
@@ -86,6 +90,7 @@ class GE.Sim
 		return false
 
 	heuristic_cost: (from, to) ->
+		return 0
 		dx = Math.abs(from.x - to.x)
 		dy = Math.abs(from.y - to.y)
 		#return 10*(dx+dy)
@@ -122,7 +127,54 @@ class GE.Sim
 		@grid = []
 		for i in [1..Const.squares]
 			@grid.push (10 for j in [1..Const.squares])
+		@divideMaze(0, 0, Const.squares, Const.squares, 0, 0)
 		return
+
+	decideOrientation: (width, height) ->
+		if width < height
+			return 0
+		if height < width
+			return 1
+		return Math.floor(Math.random()*2)
+
+	divideMaze: (x, y, width, height, orientaion) ->
+		if width < 5 or height < 5
+			return
+		isHorizontal = (orientaion == 0)
+		wx = x + (if isHorizontal then 0 else Math.floor(Math.random()*(width-2)))
+		wy = y + (if isHorizontal then Math.floor(Math.random()*(height-2)) else 0)
+		px = wx + (if isHorizontal then Math.floor(Math.random()*width) else 0)
+		py = wy + (if isHorizontal then 0 else Math.floor(Math.random()*height))
+		dx = if isHorizontal then 1 else 0
+		dy = if isHorizontal then 0 else 1
+		len = if isHorizontal then width else height
+		for i in [0...len]
+			if wx is px and wy is py
+				@grid[wx][wy] = 10
+			else
+				@grid[wx][wy] = 1001
+			wx += dx
+			wy += dy
+		nx = x
+		ny = y
+		if isHorizontal
+			w = width
+			h = wy-y+1
+		else
+			w = wx-x+1
+			h = height
+		@divideMaze(nx, ny, w, h, @decideOrientation(w, h))
+		if isHorizontal
+			nx = x
+			ny = wy+1
+			w = width
+			h = y + height-wy-1
+		else
+			nx = wx+1
+			ny = y
+			w = x + width-wx-1
+			h = height
+		@divideMaze(nx, ny, w, h, @decideOrientation(w, h))
 
 	drawPath: (currentCell) ->
 		currentCell = currentCell.dad
@@ -188,8 +240,10 @@ class GE.Sim
 			return false
 
 		$('#instantSolve').bind 'click', =>
+			@disableButtons()
 			@Astar()
 			while @AstarLoop() then
+			@enableButtons()
 			return
 		$('#diagonal').bind 'click', (ev) =>
 			@diagonals = ev.currentTarget.checked
@@ -200,4 +254,4 @@ class GE.Sim
 			return
 		return
 
-germSim = new GE.Sim($('#simview'))
+mazeSim = new GE.Sim($('#simview'))

@@ -90,7 +90,6 @@ class GE.Sim
 		return false
 
 	heuristic_cost: (from, to) ->
-		return 0
 		dx = Math.abs(from.x - to.x)
 		dy = Math.abs(from.y - to.y)
 		#return 10*(dx+dy)

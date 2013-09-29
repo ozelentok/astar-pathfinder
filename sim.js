@@ -131,7 +131,6 @@
 
     Sim.prototype.heuristic_cost = function(from, to) {
       var dx, dy;
-      return 0;
       dx = Math.abs(from.x - to.x);
       dy = Math.abs(from.y - to.y);
       return 10 * Math.sqrt(dx * dx + dy * dy);

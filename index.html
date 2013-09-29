@@ -3,15 +3,23 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-		<title>Pathfinder</title>
+		<title>A* - Shortest-Path Finder</title>
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 		<link href="style.css" rel="stylesheet" type="text/css" />
 	</head>
 	<body>
 		<div id="wrapper">
+			<h1>Shortest-Path Finder</h1>
 			<canvas id="simview"></canvas>
+			<p class="description">
+			Finds a least-cost path from blue node to red node using A* Algorithm<br />
+				Left click on a cell to set starting node, 
+				Right click on a cell to set goal node, 
+				Middle click on a cell to set obstacle <br />
+				The brighter the cell, the harder it is to go through
+			</p>
 			<div id="toolbar">
-				<button id="instantSolve">Instant Solution</button>
+				<button id="instantSolve">Solve</button>
 				<label>Allow diagonals<input type="checkbox" id="diagonal"></label>
 			</div>
 		</div>

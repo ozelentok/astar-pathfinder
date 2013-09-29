@@ -1,7 +1,10 @@
 #A* Implementation HTML5 and CoffeeScript <br />
 Hosted on:
-<a href="http://oz.elentok.com/gol">http://oz.elentok.com/gol</a>
+<a href="http://oz.elentok.com/astar">http://oz.elentok.com/astar</a>
+##Description
+	Finds a least-cost path from blue node to red node using A* Algorithm <br />
 ##Instructions
-	
-###Creating Cells:
-* Hold down the mouse and move it along the canvas to create living cells
+	Left click to set starting cell	<br />
+	Right click to set goal cell <br />	
+	Middle click to set obstacle <br />
+	The brighter the cell, the harder it is to go through <br />

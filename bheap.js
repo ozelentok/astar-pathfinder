@@ -24,9 +24,6 @@ BinaryHeap.prototype = {
     }
     return result;
   },
-  rescoreElement: function(node) {
-    this.sinkDown(this.content.indexOf(node));
-  },
   remove: function(node) {
     var length = this.content.length;
     // To remove a value, we must search through the array to find

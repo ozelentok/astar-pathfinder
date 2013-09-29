@@ -1,7 +1,6 @@
 #autocompile
-GE = {}
-class GE.Sim
-
+AS = {}
+class AS.Pathfinder
 	Const =
 		width: 700
 		squares: 100
@@ -19,6 +18,7 @@ class GE.Sim
 		@buildGrid()
 		@start = x:0, y:0
 		@goal = x:Const.squares - 1, y:Const.squares - 1
+		return
 
 	Astar: ->
 		@closedSet = {}
@@ -170,6 +170,7 @@ class GE.Sim
 			w = x + width-wx-1
 			h = height
 		@divideMaze(nx, ny, w, h, @decideOrientation(w, h))
+		return
 
 	drawPath: (currentCell) ->
 		currentCell = currentCell.dad
@@ -249,4 +250,4 @@ class GE.Sim
 			return
 		return
 
-mazeSim = new GE.Sim($('#simview'))
+astarPathfinder = new AS.Pathfinder($('#simview'))

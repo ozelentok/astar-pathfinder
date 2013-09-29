@@ -329,8 +329,36 @@
       Const.squareLen = this.canvas.width / Const.squares;
     };
 
+    Pathfinder.prototype.changeStart = function(x, y) {
+      this.start.x = x;
+      this.start.y = y;
+    };
+
+    Pathfinder.prototype.changeGoal = function(x, y) {
+      this.goal.x = x;
+      this.goal.y = y;
+    };
+
+    Pathfinder.prototype.increaseCellCost = function(x, y) {
+      this.grid[x][y] += 200;
+      if (this.grid[x][y] > 1000) {
+        this.grid[x][y] = 1000;
+      }
+    };
+
     Pathfinder.prototype.setEvents = function() {
-      var _this = this;
+      var keyCodes, modStatus,
+        _this = this;
+      modStatus = {
+        none: 0,
+        ctrl: 1,
+        shift: 2
+      };
+      keyCodes = {
+        ctrl: 17,
+        shift: 16
+      };
+      this.keyMode = modStatus.none;
       this.enableButtons();
       this.diagonals = true;
       $('#diagonal').prop('checked', this.diagonals);
@@ -339,22 +367,36 @@
         i = Math.floor((e.pageX - _this.canvas.offsetLeft) / Const.squareLen);
         j = Math.floor((e.pageY - _this.canvas.offsetTop) / Const.squareLen);
         if (e.which === 1) {
-          _this.start.x = i;
-          _this.start.y = j;
-        } else if (e.which === 3) {
-          _this.goal.x = i;
-          _this.goal.y = j;
-        } else {
-          _this.grid[i][j] += 200;
-          if (_this.grid[i][j] > 1000) {
-            _this.grid[i][j] = 1000;
+          switch (_this.keyMode) {
+            case modStatus.none:
+              _this.changeStart(i, j);
+              break;
+            case modStatus.ctrl:
+              _this.changeGoal(i, j);
+              break;
+            case modStatus.shift:
+              _this.increaseCellCost(i, j);
           }
+        } else if (e.which === 2) {
+          _this.increaseCellCost(i, j);
+        } else {
+          _this.changeGoal(i, j);
         }
         _this.drawAll();
         return false;
       });
       $(this.canvas).bind('contextmenu', function() {
         return false;
+      });
+      $(window).bind('keydown', function(e) {
+        if (e.which === keyCodes.ctrl) {
+          _this.keyMode = modStatus.ctrl;
+        } else if (e.which === keyCodes.shift) {
+          _this.keyMode = modStatus.shift;
+        }
+      });
+      $(window).bind('keyup', function() {
+        _this.keyMode = modStatus.none;
       });
       $('#instantSolve').bind('click', function() {
         _this.disableButtons();

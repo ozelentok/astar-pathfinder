@@ -19,7 +19,7 @@ body{
 #toolbar {
 	margin: 0 auto;
 	text-align: center;
-	padding:10px 50px;
+	padding:0 50px;
 	display: block
 }
 h1 {

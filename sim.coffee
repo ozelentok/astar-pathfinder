@@ -213,7 +213,31 @@ class AS.Pathfinder
 		Const.squareLen = @canvas.width / Const.squares
 		return
 
+	changeStart: (x, y) ->
+		@start.x = x
+		@start.y = y
+		return
+
+	changeGoal: (x, y) ->
+		@goal.x = x
+		@goal.y = y
+		return
+
+	increaseCellCost: (x, y) ->
+		@grid[x][y] += 200
+		if @grid[x][y] > 1000
+			@grid[x][y] = 1000
+		return
+
 	setEvents: ->
+		modStatus =
+			none: 0
+			ctrl: 1
+			shift: 2
+		keyCodes =
+			ctrl: 17
+			shift: 16
+		@keyMode = modStatus.none
 		@enableButtons()
 		@diagonals = true
 		$('#diagonal').prop('checked', @diagonals)
@@ -221,19 +245,32 @@ class AS.Pathfinder
 			i = Math.floor((e.pageX - @canvas.offsetLeft)/Const.squareLen)
 			j = Math.floor((e.pageY - @canvas.offsetTop)/Const.squareLen)
 			if e.which is 1
-				@start.x = i
-				@start.y = j
-			else if e.which is 3
-				@goal.x = i
-				@goal.y = j
+				switch @keyMode
+					when modStatus.none
+						@changeStart(i, j)
+					when modStatus.ctrl
+						@changeGoal(i, j)
+					when modStatus.shift
+						@increaseCellCost(i, j)
+			else if e.which is 2
+				@increaseCellCost(i, j)
 			else
-				@grid[i][j] += 200
-				if @grid[i][j] > 1000
-					@grid[i][j] = 1000
+				@changeGoal(i, j)
 			@drawAll()
 			return false
 		$(@canvas).bind 'contextmenu', ->
 			return false
+
+		$(window).bind 'keydown', (e) =>
+			if e.which is keyCodes.ctrl
+				@keyMode = modStatus.ctrl
+			else if e.which is keyCodes.shift
+				@keyMode = modStatus.shift
+			return
+		$(window).bind 'keyup', =>
+			@keyMode = modStatus.none
+			return
+
 
 		$('#instantSolve').bind 'click', =>
 			@disableButtons()

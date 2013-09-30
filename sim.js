@@ -4,40 +4,40 @@
 
   AS = {};
 
+  AS.Const = {
+    width: 700,
+    squares: 100
+  };
+
+  AS.Const.height = AS.Const.width;
+
+  AS.Const.squareLen = AS.Const.width / AS.Const.squares;
+
   AS.Pathfinder = (function() {
-    var Const;
-
-    Const = {
-      width: 700,
-      squares: 100
-    };
-
-    Const.height = Const.width;
-
-    Const.squareLen = Const.width / Const.squares;
-
     function Pathfinder($canvas) {
       this.canvas = $canvas[0];
-      this.ctx = this.canvas.getContext('2d');
       this.setSizes();
       this.setEvents();
       this.initData();
-      this.drawAll();
+      this.painter.drawAll(this.start, this.goal);
     }
 
     Pathfinder.prototype.initData = function() {
-      this.buildGrid();
+      this.mapGenerator = new AS.MapGenerator();
+      this.grid = [];
+      this.mapGenerator.buildMap(this.grid);
+      this.painter = new AS.Painter(this.grid, this.canvas.getContext('2d'));
       this.start = {
         x: 0,
         y: 0
       };
       this.goal = {
-        x: Const.squares - 1,
-        y: Const.squares - 1
+        x: AS.Const.squares - 1,
+        y: AS.Const.squares - 1
       };
     };
 
-    Pathfinder.prototype.Astar = function() {
+    Pathfinder.prototype.AstarInit = function() {
       this.closedSet = {};
       this.openSet = new BinaryHeap(function(node) {
         return node.fScore;
@@ -65,8 +65,7 @@
 
     Pathfinder.prototype.hasReachedGoal = function(current) {
       if (current.x === this.goal.x && current.y === this.goal.y) {
-        this.drawAll();
-        this.drawPath(current);
+        this.painter.drawSolution(this.start, this.goal, current);
         this.enableButtons();
         console.log("win");
         return true;
@@ -79,10 +78,6 @@
       _ref = this.neighborsOf(current);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         neighbor = _ref[_i];
-        if (neighbor.gScore === 1001) {
-          this.addToClosedSet(neighbor);
-          continue;
-        }
         if (this.isInClosedSet(neighbor)) {
           continue;
         }
@@ -142,9 +137,9 @@
       y = cell.y;
       neighbors = [];
       left = cell.x > 0;
-      right = cell.x < Const.squares - 1;
+      right = cell.x < AS.Const.squares - 1;
       top = cell.y > 0;
-      bottom = cell.y < Const.squares - 1;
+      bottom = cell.y < AS.Const.squares - 1;
       if (left) {
         neighbors.push({
           x: x - 1,
@@ -214,119 +209,10 @@
       return neighbors;
     };
 
-    Pathfinder.prototype.buildGrid = function() {
-      var i, j, _i, _ref;
-      this.grid = [];
-      for (i = _i = 1, _ref = Const.squares; 1 <= _ref ? _i <= _ref : _i >= _ref; i = 1 <= _ref ? ++_i : --_i) {
-        this.grid.push((function() {
-          var _j, _ref1, _results;
-          _results = [];
-          for (j = _j = 1, _ref1 = Const.squares; 1 <= _ref1 ? _j <= _ref1 : _j >= _ref1; j = 1 <= _ref1 ? ++_j : --_j) {
-            _results.push(10);
-          }
-          return _results;
-        })());
-      }
-      this.divideMaze(0, 0, Const.squares, Const.squares, 0, 0);
-    };
-
-    Pathfinder.prototype.decideOrientation = function(width, height) {
-      if (width < height) {
-        return 0;
-      }
-      if (height < width) {
-        return 1;
-      }
-      return Math.floor(Math.random() * 2);
-    };
-
-    Pathfinder.prototype.divideMaze = function(x, y, width, height, orientaion) {
-      var dx, dy, h, i, isHorizontal, len, nx, ny, val, w, wx, wy, _i;
-      if (width < 4 || height < 6) {
-        return;
-      }
-      isHorizontal = orientaion === 0;
-      wx = x + (isHorizontal ? 0 : Math.floor(Math.random() * (width - 2)));
-      wy = y + (isHorizontal ? Math.floor(Math.random() * (height - 2)) : 0);
-      dx = isHorizontal ? 1 : 0;
-      dy = isHorizontal ? 0 : 1;
-      len = isHorizontal ? width : height;
-      val = Math.floor(Math.random() * 1000);
-      for (i = _i = 0; 0 <= len ? _i < len : _i > len; i = 0 <= len ? ++_i : --_i) {
-        this.grid[wx][wy] = val;
-        wx += dx;
-        wy += dy;
-      }
-      nx = x;
-      ny = y;
-      if (isHorizontal) {
-        w = width;
-        h = wy - y + 1;
-      } else {
-        w = wx - x + 1;
-        h = height;
-      }
-      this.divideMaze(nx, ny, w, h, this.decideOrientation(w, h));
-      if (isHorizontal) {
-        nx = x;
-        ny = wy + 1;
-        w = width;
-        h = y + height - wy - 1;
-      } else {
-        nx = wx + 1;
-        ny = y;
-        w = x + width - wx - 1;
-        h = height;
-      }
-      this.divideMaze(nx, ny, w, h, this.decideOrientation(w, h));
-    };
-
-    Pathfinder.prototype.drawPath = function(currentCell) {
-      currentCell = currentCell.dad;
-      while (currentCell.dad) {
-        this.drawCell(currentCell.x, currentCell.y, '#0F0');
-        currentCell = currentCell.dad;
-      }
-    };
-
-    Pathfinder.prototype.drawGrid = function() {
-      var i, j, _i, _j, _ref, _ref1;
-      for (i = _i = 0, _ref = Const.squares; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-        for (j = _j = 0, _ref1 = Const.squares; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; j = 0 <= _ref1 ? ++_j : --_j) {
-          this.drawCell(i, j, this.gToColor(this.grid[i][j]));
-        }
-      }
-    };
-
-    Pathfinder.prototype.gToColor = function(g) {
-      var str;
-      str = Math.floor(g * 255 / 1000).toString(16);
-      return '#' + str + str + str;
-    };
-
-    Pathfinder.prototype.disableButtons = function() {
-      $('button').attr('disabled', 'disabled');
-    };
-
-    Pathfinder.prototype.enableButtons = function() {
-      $('button').removeAttr('disabled');
-    };
-
-    Pathfinder.prototype.drawCell = function(x, y, color) {
-      this.ctx.fillStyle = color;
-      this.ctx.fillRect(x * Const.squareLen, y * Const.squareLen, Const.squareLen, Const.squareLen);
-    };
-
-    Pathfinder.prototype.drawAll = function() {
-      this.drawGrid();
-      this.drawCell(this.start.x, this.start.y, '#22F');
-      this.drawCell(this.goal.x, this.goal.y, '#F00');
-    };
-
     Pathfinder.prototype.setSizes = function() {
-      this.canvas.width = Math.min($(window).width() - 40, Const.width);
-      this.canvas.height = Math.min($(window).width() - 40, Const.height);
-      Const.squareLen = this.canvas.width / Const.squares;
+      this.canvas.width = Math.min($(window).width() - 40, AS.Const.width);
+      this.canvas.height = Math.min($(window).width() - 40, AS.Const.height);
+      AS.Const.squareLen = this.canvas.width / AS.Const.squares;
     };
 
     Pathfinder.prototype.changeStart = function(x, y) {
@@ -344,6 +230,14 @@
       if (this.grid[x][y] > 1000) {
         this.grid[x][y] = 1000;
       }
+    };
+
+    Pathfinder.prototype.disableButtons = function() {
+      $('button').attr('disabled', 'disabled');
+    };
+
+    Pathfinder.prototype.enableButtons = function() {
+      $('button').removeAttr('disabled');
     };
 
     Pathfinder.prototype.setEvents = function() {
@@ -364,8 +258,8 @@
       $('#diagonal').prop('checked', this.diagonals);
       $(this.canvas).bind('mousedown', function(e) {
         var i, j;
-        i = Math.floor((e.pageX - _this.canvas.offsetLeft) / Const.squareLen);
-        j = Math.floor((e.pageY - _this.canvas.offsetTop) / Const.squareLen);
+        i = Math.floor((e.pageX - _this.canvas.offsetLeft) / AS.Const.squareLen);
+        j = Math.floor((e.pageY - _this.canvas.offsetTop) / AS.Const.squareLen);
         if (e.which === 1) {
           switch (_this.keyMode) {
             case modStatus.none:
@@ -382,7 +276,7 @@
         } else {
           _this.changeGoal(i, j);
         }
-        _this.drawAll();
+        _this.painter.drawAll();
         return false;
       });
       $(this.canvas).bind('contextmenu', function() {
@@ -400,7 +294,7 @@
       });
       $('#instantSolve').bind('click', function() {
         _this.disableButtons();
-        _this.Astar();
+        _this.AstarInit();
         while (_this.AstarLoop()) {}
         _this.enableButtons();
       });
@@ -410,11 +304,138 @@
       });
       $(window).resize(function() {
         _this.setSizes();
-        _this.drawAll();
+        _this.painter.drawAll();
       });
     };
 
     return Pathfinder;
+
+  })();
+
+  AS.MapGenerator = (function() {
+    function MapGenerator() {}
+
+    MapGenerator.prototype.buildMap = function(grid) {
+      var i, j, _i, _j, _k, _ref, _ref1, _ref2;
+      if (grid.length === 0) {
+        for (i = _i = 0, _ref = AS.Const.squares; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+          grid.push((function() {
+            var _j, _ref1, _results;
+            _results = [];
+            for (j = _j = 0, _ref1 = AS.Const.squares; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; j = 0 <= _ref1 ? ++_j : --_j) {
+              _results.push(10);
+            }
+            return _results;
+          })());
+        }
+      } else {
+        for (i = _j = 0, _ref1 = AS.Const.squares; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+          for (j = _k = 0, _ref2 = AS.Const.squares; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; j = 0 <= _ref2 ? ++_k : --_k) {
+            grid[i][j] = 10;
+          }
+        }
+      }
+      this.divideMap(grid, 0, 0, AS.Const.squares, AS.Const.squares, 0);
+      return grid;
+    };
+
+    MapGenerator.prototype.decideOrientation = function(width, height) {
+      if (width < height) {
+        return 0;
+      }
+      if (height < width) {
+        return 1;
+      }
+      return Math.floor(Math.random() * 2);
+    };
+
+    MapGenerator.prototype.divideMap = function(grid, x, y, width, height, orientaion) {
+      var dx, dy, h, i, isHorizontal, len, nx, ny, val, w, wx, wy, _i;
+      if (width < 4 || height < 6) {
+        return;
+      }
+      isHorizontal = orientaion === 0;
+      wx = x + (isHorizontal ? 0 : Math.floor(Math.random() * (width - 2)));
+      wy = y + (isHorizontal ? Math.floor(Math.random() * (height - 2)) : 0);
+      dx = isHorizontal ? 1 : 0;
+      dy = isHorizontal ? 0 : 1;
+      len = isHorizontal ? width : height;
+      val = Math.floor(Math.random() * 1000);
+      for (i = _i = 0; 0 <= len ? _i < len : _i > len; i = 0 <= len ? ++_i : --_i) {
+        grid[wx][wy] = val;
+        wx += dx;
+        wy += dy;
+      }
+      nx = x;
+      ny = y;
+      if (isHorizontal) {
+        w = width;
+        h = wy - y + 1;
+      } else {
+        w = wx - x + 1;
+        h = height;
+      }
+      this.divideMap(grid, nx, ny, w, h, this.decideOrientation(w, h));
+      if (isHorizontal) {
+        nx = x;
+        ny = wy + 1;
+        w = width;
+        h = y + height - wy - 1;
+      } else {
+        nx = wx + 1;
+        ny = y;
+        w = x + width - wx - 1;
+        h = height;
+      }
+      this.divideMap(grid, nx, ny, w, h, this.decideOrientation(w, h));
+    };
+
+    return MapGenerator;
+
+  })();
+
+  AS.Painter = (function() {
+    function Painter(grid, ctx) {
+      this.grid = grid;
+      this.ctx = ctx;
+    }
+
+    Painter.prototype.drawGrid = function() {
+      var i, j, _i, _j, _ref, _ref1;
+      for (i = _i = 0, _ref = AS.Const.squares; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+        for (j = _j = 0, _ref1 = AS.Const.squares; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; j = 0 <= _ref1 ? ++_j : --_j) {
+          this.drawCell(i, j, this.gToColor(this.grid[i][j]));
+        }
+      }
+    };
+
+    Painter.prototype.drawCell = function(x, y, color) {
+      this.ctx.fillStyle = color;
+      this.ctx.fillRect(x * AS.Const.squareLen, y * AS.Const.squareLen, AS.Const.squareLen, AS.Const.squareLen);
+    };
+
+    Painter.prototype.drawAll = function(start, goal) {
+      this.drawGrid();
+      this.drawCell(start.x, start.y, '#22F');
+      this.drawCell(goal.x, goal.y, '#F00');
+    };
+
+    Painter.prototype.drawSolution = function(start, goal, solutionCell) {
+      this.drawAll(start, goal);
+      solutionCell = solutionCell.dad;
+      while (solutionCell.dad) {
+        this.drawCell(solutionCell.x, solutionCell.y, '#0F0');
+        solutionCell = solutionCell.dad;
+      }
+    };
+
+    Painter.prototype.gToColor = function(g) {
+      var str;
+      str = Math.floor(g * 255 / 1000).toString(16);
+      return '#' + str + str + str;
+    };
+
+    return Painter;
 
   })();
 

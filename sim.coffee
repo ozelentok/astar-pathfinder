@@ -1,26 +1,28 @@
 #autocompile
 AS = {}
+AS.Const =
+	width: 700
+	squares: 100
+AS.Const.height = AS.Const.width
+AS.Const.squareLen = AS.Const.width / AS.Const.squares
 class AS.Pathfinder
-	Const =
-		width: 700
-		squares: 100
-	Const.height = Const.width
-	Const.squareLen = Const.width / Const.squares
 	constructor: ($canvas) ->
 		@canvas = $canvas[0]
-		@ctx = @canvas.getContext '2d'
 		@setSizes()
 		@setEvents()
 		@initData()
-		@drawAll()
+		@painter.drawAll(@start, @goal)
 
 	initData: ->
-		@buildGrid()
+		@mapGenerator = new AS.MapGenerator()
+		@grid = []
+		@mapGenerator.buildMap(@grid)
+		@painter = new AS.Painter(@grid, @canvas.getContext('2d'))
 		@start = x:0, y:0
-		@goal = x:Const.squares - 1, y:Const.squares - 1
+		@goal = x:AS.Const.squares - 1, y:AS.Const.squares - 1
 		return
 
-	Astar: ->
+	AstarInit: ->
 		@closedSet = {}
 		@openSet = new BinaryHeap((node) ->
 			return node.fScore
@@ -44,8 +46,7 @@ class AS.Pathfinder
 
 	hasReachedGoal: (current) ->
 		if current.x is @goal.x and current.y is @goal.y
-			@drawAll()
-			@drawPath(current)
+			@painter.drawSolution(@start, @goal, current)
 			@enableButtons()
 			console.log "win"
 			return true
@@ -53,9 +54,6 @@ class AS.Pathfinder
 
 	checkNeighbors: (current) ->
 		for neighbor in @neighborsOf(current)
-			if neighbor.gScore is 1001
-				@addToClosedSet(neighbor)
-				continue
 			if @isInClosedSet(neighbor)
 				continue
 			if not @isInOpenSet(neighbor)
@@ -100,9 +98,9 @@ class AS.Pathfinder
 		y = cell.y
 		neighbors = []
 		left = cell.x > 0
-		right = cell.x < Const.squares - 1
+		right = cell.x < AS.Const.squares - 1
 		top = cell.y > 0
-		bottom = cell.y < Const.squares - 1
+		bottom = cell.y < AS.Const.squares - 1
 		if(left)
 			neighbors.push({x: x - 1, y: y, gScore:@grid[x-1][y], dad:cell})
 		if(right)
@@ -122,95 +120,10 @@ class AS.Pathfinder
 					neighbors.push({x: x + 1, y: y + 1, gScore:@grid[x+1][y+1], dad:cell})
 		return neighbors
 
-	buildGrid: ->
-		@grid = []
-		for i in [1..Const.squares]
-			@grid.push (10 for j in [1..Const.squares])
-		@divideMaze(0, 0, Const.squares, Const.squares, 0, 0)
-		return
-
-	decideOrientation: (width, height) ->
-		if width < height
-			return 0
-		if height < width
-			return 1
-		return Math.floor(Math.random()*2)
-
-	divideMaze: (x, y, width, height, orientaion) ->
-		if width < 4 or height < 6
-			return
-		isHorizontal = (orientaion == 0)
-		wx = x + (if isHorizontal then 0 else Math.floor(Math.random()*(width-2)))
-		wy = y + (if isHorizontal then Math.floor(Math.random()*(height-2)) else 0)
-		dx = if isHorizontal then 1 else 0
-		dy = if isHorizontal then 0 else 1
-		len = if isHorizontal then width else height
-		val = Math.floor(Math.random()*1000)
-		for i in [0...len]
-			@grid[wx][wy] = val
-			wx += dx
-			wy += dy
-		nx = x
-		ny = y
-		if isHorizontal
-			w = width
-			h = wy-y+1
-		else
-			w = wx-x+1
-			h = height
-		@divideMaze(nx, ny, w, h, @decideOrientation(w, h))
-		if isHorizontal
-			nx = x
-			ny = wy+1
-			w = width
-			h = y + height-wy-1
-		else
-			nx = wx+1
-			ny = y
-			w = x + width-wx-1
-			h = height
-		@divideMaze(nx, ny, w, h, @decideOrientation(w, h))
-		return
-
-	drawPath: (currentCell) ->
-		currentCell = currentCell.dad
-		while currentCell.dad
-			@drawCell currentCell.x, currentCell.y, '#0F0'
-			currentCell = currentCell.dad
-		return
-
-	drawGrid: ->
-		for i in [0...Const.squares]
-			for j in [0...Const.squares]
-				@drawCell i, j, @gToColor(@grid[i][j])
-		return
-
-	gToColor: (g)->
-		str = Math.floor(g * 255 / 1000).toString(16)
-		return '#' + str + str + str
-
-	disableButtons: ->
-		$('button').attr('disabled', 'disabled')
-		return
-
-	enableButtons: ->
-		$('button').removeAttr('disabled')
-		return
-	drawCell: (x, y, color) ->
-		@ctx.fillStyle = color
-		@ctx.fillRect(x * Const.squareLen, y*Const.squareLen, Const.squareLen, Const.squareLen)
-		return
-
-	drawAll: ->
-		@drawGrid()
-		@drawCell(@start.x, @start.y, '#22F')
-		@drawCell(@goal.x, @goal.y,'#F00')
-		return
-
 	setSizes: ->
-		@canvas.width = Math.min $(window).width() - 40, Const.width
-		@canvas.height = Math.min $(window).width() - 40, Const.height
-		Const.squareLen = @canvas.width / Const.squares
+		@canvas.width = Math.min $(window).width() - 40, AS.Const.width
+		@canvas.height = Math.min $(window).width() - 40, AS.Const.height
+		AS.Const.squareLen = @canvas.width / AS.Const.squares
 		return
 
 	changeStart: (x, y) ->
@@ -229,6 +142,14 @@ class AS.Pathfinder
 			@grid[x][y] = 1000
 		return
 
+	disableButtons: ->
+		$('button').attr('disabled', 'disabled')
+		return
+
+	enableButtons: ->
+		$('button').removeAttr('disabled')
+		return
+	
 	setEvents: ->
 		modStatus =
 			none: 0
@@ -242,8 +163,8 @@ class AS.Pathfinder
 		@diagonals = true
 		$('#diagonal').prop('checked', @diagonals)
 		$(@canvas).bind 'mousedown', (e) =>
-			i = Math.floor((e.pageX - @canvas.offsetLeft)/Const.squareLen)
-			j = Math.floor((e.pageY - @canvas.offsetTop)/Const.squareLen)
+			i = Math.floor((e.pageX - @canvas.offsetLeft)/AS.Const.squareLen)
+			j = Math.floor((e.pageY - @canvas.offsetTop)/AS.Const.squareLen)
 			if e.which is 1
 				switch @keyMode
 					when modStatus.none
@@ -256,7 +177,7 @@ class AS.Pathfinder
 				@increaseCellCost(i, j)
 			else
 				@changeGoal(i, j)
-			@drawAll()
+			@painter.drawAll()
 			return false
 		$(@canvas).bind 'contextmenu', ->
 			return false
@@ -271,20 +192,109 @@ class AS.Pathfinder
 			@keyMode = modStatus.none
 			return
 
-
 		$('#instantSolve').bind 'click', =>
 			@disableButtons()
-			@Astar()
+			@AstarInit()
 			while @AstarLoop() then
 			@enableButtons()
 			return
 		$('#diagonal').bind 'click', (ev) =>
 			@diagonals = ev.currentTarget.checked
 			return true
+
 		$(window).resize =>
 			@setSizes()
-			@drawAll()
+			@painter.drawAll()
 			return
 		return
+
+class AS.MapGenerator
+
+	buildMap:(grid) ->
+		if grid.length is 0
+			for i in [0...AS.Const.squares]
+				grid.push (10 for j in [0...AS.Const.squares])
+		else
+			for i in [0...AS.Const.squares]
+				for j in [0...AS.Const.squares]
+					grid[i][j] = 10
+		@divideMap(grid, 0, 0, AS.Const.squares, AS.Const.squares, 0)
+		return grid
+
+	decideOrientation: (width, height) ->
+		if width < height
+			return 0
+		if height < width
+			return 1
+		return Math.floor(Math.random()*2)
+
+	divideMap: (grid, x, y, width, height, orientaion) ->
+		if width < 4 or height < 6
+			return
+		isHorizontal = (orientaion == 0)
+		wx = x + (if isHorizontal then 0 else Math.floor(Math.random()*(width-2)))
+		wy = y + (if isHorizontal then Math.floor(Math.random()*(height-2)) else 0)
+		dx = if isHorizontal then 1 else 0
+		dy = if isHorizontal then 0 else 1
+		len = if isHorizontal then width else height
+		val = Math.floor(Math.random()*1000)
+		for i in [0...len]
+			grid[wx][wy] = val
+			wx += dx
+			wy += dy
+		nx = x
+		ny = y
+		if isHorizontal
+			w = width
+			h = wy-y+1
+		else
+			w = wx-x+1
+			h = height
+		@divideMap(grid, nx, ny, w, h, @decideOrientation(w, h))
+		if isHorizontal
+			nx = x
+			ny = wy+1
+			w = width
+			h = y + height-wy-1
+		else
+			nx = wx+1
+			ny = y
+			w = x + width-wx-1
+			h = height
+		@divideMap(grid, nx, ny, w, h, @decideOrientation(w, h))
+		return
+
+class AS.Painter
+	constructor: (@grid, @ctx) ->
+
+	drawGrid: ->
+		for i in [0...AS.Const.squares]
+			for j in [0...AS.Const.squares]
+				@drawCell i, j, @gToColor(@grid[i][j])
+		return
+
+	drawCell: (x, y, color) ->
+		@ctx.fillStyle = color
+		@ctx.fillRect(x * AS.Const.squareLen, y*AS.Const.squareLen, AS.Const.squareLen, AS.Const.squareLen)
+		return
+
+	drawAll:(start, goal) ->
+		@drawGrid()
+		@drawCell(start.x, start.y, '#22F')
+		@drawCell(goal.x, goal.y,'#F00')
+		return
+
+	drawSolution: (start, goal, solutionCell) ->
+		@drawAll(start, goal)
+		solutionCell = solutionCell.dad
+		while solutionCell.dad
+			@drawCell solutionCell.x, solutionCell.y, '#0F0'
+			solutionCell = solutionCell.dad
+		return
+
+	gToColor: (g)->
+		str = Math.floor(g * 255 / 1000).toString(16)
+		return '#' + str + str + str
+
 
 astarPathfinder = new AS.Pathfinder($('#simview'))

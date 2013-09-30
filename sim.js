@@ -298,6 +298,10 @@
         while (_this.AstarLoop()) {}
         _this.enableButtons();
       });
+      $('#genMap').bind('click', function() {
+        _this.mapGenerator.buildMap(_this.grid);
+        _this.painter.drawAll(_this.start, _this.goal);
+      });
       $('#diagonal').bind('click', function(ev) {
         _this.diagonals = ev.currentTarget.checked;
         return true;

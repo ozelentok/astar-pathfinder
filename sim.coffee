@@ -198,6 +198,11 @@ class AS.Pathfinder
 			while @AstarLoop() then
 			@enableButtons()
 			return
+		$('#genMap').bind 'click', =>
+			@mapGenerator.buildMap(@grid)
+			@painter.drawAll(@start, @goal)
+			return
+
 		$('#diagonal').bind 'click', (ev) =>
 			@diagonals = ev.currentTarget.checked
 			return true

@@ -12,6 +12,11 @@
 		<div id="wrapper">
 			<h1>Shortest-Path Finder</h1>
 			<canvas id="simview"></canvas>
+			<div id="toolbar">
+				<button id="instantSolve">Solve</button>
+				<button id="genMap">Generate Map</button>
+				<label>Allow diagonals<input type="checkbox" id="diagonal"></label>
+			</div>
 			<p class="description">
 			Finds a least-cost path from blue node to red node using A* Algorithm<br />
 			Left click on a cell to set starting node <br > 
@@ -19,10 +24,6 @@
 			Middle click/Hold Shift and left click on a cell to set obstacle <br />
 			The brighter the cell, the harder it is to go through.
 			</p>
-			<div id="toolbar">
-				<button id="instantSolve">Solve</button>
-				<label>Allow diagonals<input type="checkbox" id="diagonal"></label>
-			</div>
 			<div id="footer">
 				Made by <a href="http://oz.elentok.com">Oz Elentok</a>, source available at <a href="https://github.com/ozelentok/astar-pathfinder">Github</a>
 			</div>

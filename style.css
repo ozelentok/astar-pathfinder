@@ -38,3 +38,9 @@ h1 {
 	padding:0 50px;
 	display: block
 }
+a:link {
+	color: #dd5;
+}
+a:visited {
+	color: #dd5;
+}

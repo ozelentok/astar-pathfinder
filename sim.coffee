@@ -2,7 +2,7 @@
 AS = {}
 AS.Const =
 	width: 700
-	squares: 5
+	squares: 100
 AS.Const.height = AS.Const.width
 AS.Const.squareLen = AS.Const.width / AS.Const.squares
 class AS.Pathfinder
@@ -18,8 +18,8 @@ class AS.Pathfinder
 		@grid = []
 		@mapGenerator.buildMap(@grid)
 		@painter = new AS.Painter(@grid, @canvas.getContext('2d'))
-		@start = {x:0, y:0}
-		@goal = {x:AS.Const.squares - 1, y:AS.Const.squares - 1}
+		@start = x:0, y:0
+		@goal = x:AS.Const.squares - 1, y:AS.Const.squares - 1
 		return
 
 	AstarInit: ->
@@ -56,15 +56,16 @@ class AS.Pathfinder
 		for neighbor in @neighborsOf(current)
 			if @isInClosedSet(neighbor)
 				continue
-			if not @isInOpenSet(neighbor)
+			cellInList = @findInOpenSet(neighbor)
+			if not cellInList
 				neighbor.gScore += current.gScore
 				@addToOpenSet(neighbor)
 			else
-				tentativeGScore = current.gScore + @grid[neighbor.x][neighbor.y] # dist_between
-				if tentativeGScore < neighbor.gScore
-					neighbor.dad = current
-					neighbor.gScore = tentativeGScore
-					neighbor.fScore = neighbor.gScore + @heuristic_cost(neighbor, @goal)
+				tentativeGScore = current.gScore + neighbor.gScore # dist_between
+				if tentativeGScore < cellInList.gScore
+					cellInList.dad = current
+					cellInList.gScore = tentativeGScore
+					cellInList.fScore = neighbor.gScore + @heuristic_cost(cellInList, @goal)
 		return
 
 	addToOpenSet: (cell) ->
@@ -81,10 +82,10 @@ class AS.Pathfinder
 		key = cell.x + '|' + cell.y
 		return key of @closedSet
 
-	isInOpenSet: (cell) ->
+	findInOpenSet: (cell) ->
 		for setCell in @openSet.content
 			if setCell.x is cell.x and setCell.y is cell.y
-				return true
+				return setCell
 		return false
 
 	heuristic_cost: (from, to) ->
@@ -209,7 +210,7 @@ class AS.Pathfinder
 
 		$(window).resize =>
 			@setSizes()
-			@painter.drawAll()
+			@painter.drawAll(@start, @goal)
 			return
 		return
 
@@ -300,6 +301,5 @@ class AS.Painter
 	gToColor: (g)->
 		str = Math.floor(g * 255 / 1000).toString(16)
 		return '#' + str + str + str
-
 
 astarPathfinder = new AS.Pathfinder($('#simview'))

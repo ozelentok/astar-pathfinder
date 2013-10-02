@@ -6,7 +6,7 @@
 
   AS.Const = {
     width: 700,
-    squares: 5
+    squares: 100
   };
 
   AS.Const.height = AS.Const.width;
@@ -74,22 +74,23 @@
     };
 
     Pathfinder.prototype.checkNeighbors = function(current) {
-      var neighbor, tentativeGScore, _i, _len, _ref;
+      var cellInList, neighbor, tentativeGScore, _i, _len, _ref;
       _ref = this.neighborsOf(current);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         neighbor = _ref[_i];
         if (this.isInClosedSet(neighbor)) {
           continue;
         }
-        if (!this.isInOpenSet(neighbor)) {
+        cellInList = this.findInOpenSet(neighbor);
+        if (!cellInList) {
           neighbor.gScore += current.gScore;
           this.addToOpenSet(neighbor);
         } else {
-          tentativeGScore = current.gScore + this.grid[neighbor.x][neighbor.y];
-          if (tentativeGScore < neighbor.gScore) {
-            neighbor.dad = current;
-            neighbor.gScore = tentativeGScore;
-            neighbor.fScore = neighbor.gScore + this.heuristic_cost(neighbor, this.goal);
+          tentativeGScore = current.gScore + neighbor.gScore;
+          if (tentativeGScore < cellInList.gScore) {
+            cellInList.dad = current;
+            cellInList.gScore = tentativeGScore;
+            cellInList.fScore = neighbor.gScore + this.heuristic_cost(cellInList, this.goal);
           }
         }
       }
@@ -112,13 +113,13 @@
       return key in this.closedSet;
     };
 
-    Pathfinder.prototype.isInOpenSet = function(cell) {
+    Pathfinder.prototype.findInOpenSet = function(cell) {
       var setCell, _i, _len, _ref;
       _ref = this.openSet.content;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         setCell = _ref[_i];
         if (setCell.x === cell.x && setCell.y === cell.y) {
-          return true;
+          return setCell;
         }
       }
       return false;
@@ -308,7 +309,7 @@
       });
       $(window).resize(function() {
         _this.setSizes();
-        _this.painter.drawAll();
+        _this.painter.drawAll(_this.start, _this.goal);
       });
     };
 

@@ -6,7 +6,7 @@
 
   AS.Const = {
     width: 700,
-    squares: 100
+    squares: 5
   };
 
   AS.Const.height = AS.Const.width;
@@ -276,7 +276,7 @@
         } else {
           _this.changeGoal(i, j);
         }
-        _this.painter.drawAll();
+        _this.painter.drawAll(_this.start, _this.goal);
         return false;
       });
       $(this.canvas).bind('contextmenu', function() {

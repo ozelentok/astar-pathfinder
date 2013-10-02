@@ -2,7 +2,7 @@
 AS = {}
 AS.Const =
 	width: 700
-	squares: 100
+	squares: 5
 AS.Const.height = AS.Const.width
 AS.Const.squareLen = AS.Const.width / AS.Const.squares
 class AS.Pathfinder
@@ -18,8 +18,8 @@ class AS.Pathfinder
 		@grid = []
 		@mapGenerator.buildMap(@grid)
 		@painter = new AS.Painter(@grid, @canvas.getContext('2d'))
-		@start = x:0, y:0
-		@goal = x:AS.Const.squares - 1, y:AS.Const.squares - 1
+		@start = {x:0, y:0}
+		@goal = {x:AS.Const.squares - 1, y:AS.Const.squares - 1}
 		return
 
 	AstarInit: ->
@@ -177,7 +177,7 @@ class AS.Pathfinder
 				@increaseCellCost(i, j)
 			else
 				@changeGoal(i, j)
-			@painter.drawAll()
+			@painter.drawAll(@start, @goal)
 			return false
 		$(@canvas).bind 'contextmenu', ->
 			return false
@@ -236,7 +236,7 @@ class AS.MapGenerator
 	divideMap: (grid, x, y, width, height, orientaion) ->
 		if width < 4 or height < 6
 			return
-		isHorizontal = (orientaion == 0)
+		isHorizontal = (orientaion is 0)
 		wx = x + (if isHorizontal then 0 else Math.floor(Math.random()*(width-2)))
 		wy = y + (if isHorizontal then Math.floor(Math.random()*(height-2)) else 0)
 		dx = if isHorizontal then 1 else 0
